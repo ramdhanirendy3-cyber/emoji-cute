@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mochi Catch!</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#fff4f8;color:#55334a;display:flex;justify-content:center;min-height:100vh;padding:18px}
+.game{width:min(100%,480px);text-align:center}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+h1{font-size:clamp(26px,8vw,38px);margin:8px 0;color:#d65f98} .stats{display:flex;gap:8px}.stat{background:white;border:2px solid #ffd5e6;border-radius:14px;padding:7px 12px;font-weight:800}
+.arena{position:relative;height:min(62vh,520px);min-height:360px;background:linear-gradient(#ffe7f1,#fff9fc);border:3px solid #ffc5dd;border-radius:24px;overflow:hidden;box-shadow:0 8px 0 #f7c6dc;touch-action:manipulation}
+.cloud{position:absolute;font-size:35px;opacity:.7;pointer-events:none}.cloud.one{left:8%;top:8%}.cloud.two{right:10%;top:18%}
+.item{position:absolute;border:0;background:transparent;font-size:42px;line-height:1;cursor:pointer;padding:0;filter:drop-shadow(0 4px 2px #d6a9bf);animation:pop .18s ease-out}
+@keyframes pop{from{transform:scale(.5)}to{transform:scale(1)}}
+.basket{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:64px;pointer-events:none;filter:drop-shadow(0 4px 0 #e8a7c7)}
+.overlay{position:absolute;inset:0;background:#fff8fcdf;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px}
+.overlay h2{font-size:30px;margin:0 0 8px}.overlay p{max-width:300px;line-height:1.5;margin:6px 0 18px}
+button.main{border:0;border-radius:999px;background:#df6da4;color:white;font-weight:900;font-size:18px;padding:13px 28px;box-shadow:0 4px 0 #b94e83;cursor:pointer}
+.note{font-size:13px;margin-top:14px;color:#936b82}.flash{position:absolute;top:45%;left:0;right:0;font-weight:900;font-size:24px;color:#cf508d;pointer-events:none;text-shadow:0 2px white}
+</style>
+</head>
+<body>
+<main class="game">
+  <h1>🍡 Mochi Catch!</h1>
+  <div class="top">
+    <div class="stat">Poin: <span id="score">0</span></div>
+    <div class="stat">Waktu: <span id="time">30</span>s</div>
+    <div class="stat">Best: <span id="best">0</span></div>
+  </div>
+  <section class="arena" id="arena" aria-label="Area permainan">
+    <div class="cloud one">☁️</div><div class="cloud two">☁️</div>
+    <div class="basket">🧺</div>
+    <div class="overlay" id="overlay">
+      <h2>Siap, mochi hunter?</h2>
+      <p>Tap mochi yang muncul buat dapet poin! 🍡<br>Hindari cabai 🌶️ ya, nanti mochi-nya kepedesan!</p>
+      <button class="main" id="start">GAS MAIN!</button>
+    </div>
+  </section>
+  <div class="note">Mochi 🍡 +1 · Mochi spesial 🍓 +3 · Cabai 🌶️ −2</div>
+</main>
+<script>
+const arena=document.getElementById('arena'),overlay=document.getElementById('overlay');
+const scoreEl=document.getElementById('score'),timeEl=document.getElementById('time'),bestEl=document.getElementById('best');
+let score=0,time=30,playing=false,spawnTimer,clockTimer;
+let best=Number(localStorage.getItem('mochiBest')||0);bestEl.textContent=best;
+function clearItems(){arena.querySelectorAll('.item').forEach(x=>x.remove())}
+function start(){
+ clearInterval(spawnTimer);clearInterval(clockTimer);clearItems();
+ score=0;time=30;playing=true;scoreEl.textContent=score;timeEl.textContent=time;overlay.style.display='none';
+ spawn();spawnTimer=setInterval(spawn,720);
+ clockTimer=setInterval(()=>{time--;timeEl.textContent=time;if(time<=0)end()},1000);
+}
+function spawn(){
+ if(!playing)return;
+ const isChili=Math.random()<.19,isBerry=!isChili&&Math.random()<.17;
+ const b=document.createElement('button');b.className='item';
+ b.textContent=isChili?'🌶️':isBerry?'🍓':'🍡';b.setAttribute('aria-label',isChili?'Cabai':isBerry?'Mochi spesial':'Mochi');
+ const w=arena.clientWidth,h=arena.clientHeight;
+ const x=12+Math.random()*(w-64),y=65+Math.random()*(h-150);
+ b.style.left=x+'px';b.style.top=y+'px';
+ b.onclick=()=>{if(!playing)return;score+=isChili?-2:isBerry?3:1;score=Math.max(0,score);scoreEl.textContent=score;
+  const msg=document.createElement('div');msg.className='flash';msg.textContent=isChili?'Aduh pedes! 🌶️':isBerry?'+3 yummy! 🍓':'+1 nyam! 🍡';arena.append(msg);setTimeout(()=>msg.remove(),450);b.remove();};
+ arena.append(b);setTimeout(()=>{if(b.isConnected)b.remove()},1350);
+}
+function end(){
+ playing=false;clearInterval(spawnTimer);clearInterval(clockTimer);clearItems();
+ if(score>best){best=score;localStorage.setItem('mochiBest',best);bestEl.textContent=best}
+ overlay.style.display='flex';overlay.innerHTML=`<h2>Yummy! 🍡</h2><p>Skor kamu <b>${score}</b> poin!<br>${score>=20?'Kamu master mochi!':'Mochi-mochi bangga sama kamu!'}</p><button class="main" id="again">MAIN LAGI</button>`;
+ document.getElementById('again').onclick=start;
+}
+document.getElementById('start').onclick=start;
+</script>
+</body>
+</html>
